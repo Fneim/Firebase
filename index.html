@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Firebase - Train Time</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.3.0/firebase.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+    <style type="text/css">
+    .jumbotron {
+        background-color: #654321;
+        color: #fff;
+        height: 210px;
+        text-align: center;
+        padding: 15px;
+    }
+
+    .headings {
+        background-color: #0088CC;
+        color: #fff;
+        padding: 7px;
+        margin-top: 0;
+        margin-bottom: 0;
+        font-weight: bold;
+    }
+
+    .main-body {
+        border: 2px #0088CC solid;
+        border-radius: 5px;
+        margin-bottom: 30px;
+        padding: 0;
+    }
+
+    #form {
+        padding: 10px;
+    }
+
+    input {
+        width: 100%;
+        padding: 3px;
+        margin-bottom: 10px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="jumbotron">
+                <h1>Anytime is Train Time</h1>
+                <h3>Choo Choo, Chee Chee.</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 main-body">
+                <h5 class="headings">Current Train Schedule</h5>
+                <table class="table" id="table">
+                    <th id="train-name">Train Name</th>
+                    <th id="destination">Destination</th>
+                    <th id="frequency">Frequency (min)</th>
+                    <th id="next-arrival">Next Arrival</th>
+                    <th id="minutes-away">Minutes Away</th>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 main-body">
+                <h5 class="headings">Add Train</h5>
+                <form id="form">
+                    Train Name:
+                    <br/>
+                    <input id="train-input" type="text" name="train" />
+                    <br/> Destination:
+                    <br/>
+                    <input id="dest-input" type="text" name="destination" />
+                    <br/> First Train Time (HH:mm - military time):
+                    <br/>
+                    <input id="first-train-input" type="text" name="time" />
+                    <br/> Frequency (min):
+                    <br/>
+                    <input id="freq-input" type="text" name="frequency" />
+                    <br/>
+                    <button id="submit" class="btn btn-default btn-primary" type="submit" name="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- <script src="assets/javascript/firebase.js"></script> -->
+    <script type="text/javascript">
+    // // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyD5O872GrO9q840oOuwfEghU9K-xbZG32E",
+        authDomain: "wk4-firebase-project.firebaseapp.com",
+        databaseURL: "https://wk4-firebase-project.firebaseio.com",
+        projectId: "wk4-firebase-project",
+        storageBucket: "",
+        messagingSenderId: "617196112498"
+    };
+    firebase.initializeApp(config);
+
+    // //connect to firebase
+    var database = firebase.database();
+
+    //onclick button will run anonymous function
+    $("#submit").on("click", function(event) {
+
+        event.preventDefault();
+
+        var train = $("#train-input").val();
+        var dest = $("#dest-input").val();
+        var firstTrainTime = $("#first-train-input").val();
+        var freq = $("#freq-input").val();
+
+        //storing train info in temp object
+        var newTrain = {
+            train: train,
+            dest: dest,
+            firstTrain: firstTrainTime,
+            freq: freq
+        };
+
+        //uploading train info to the database
+        database.ref().push(newTrain);
+
+        console.log(newTrain.train);
+        console.log(newTrain.dest);
+        console.log(newTrain.firstTrain);
+        console.log(newTrain.freq);
+
+        alert("New Train Successfully Added");
+
+        $("#train-input").val("");
+        $("#dest-input").val("");
+        $("#first-train-input").val("");
+        $("#freq-input").val("");
+    });
+
+    database.ref().on("child_added", function(snapshot, prevChildKey) {
+
+        var train = snapshot.val().train;
+        var dest = snapshot.val().dest;
+        var firstTrainTime = snapshot.val().firstTrain;
+        var freq = snapshot.val().freq;
+
+        console.log(train);
+        console.log(dest);
+        console.log(firstTrainTime);
+        console.log(freq);
+
+        var convertedTime = moment(firstTrainTime, "hh:mm").subtract(1, "years");
+        console.log("Convert: " + convertedTime);
+
+        var currentTime = moment();
+        console.log("Current: " + moment(currentTime).format("LT"));
+
+        var diffTime = moment().diff(moment(convertedTime), "minutes");
+        console.log("Difference: " + diffTime);
+
+        var remainder = diffTime % freq;
+        console.log("Remainder :" + remainder);
+
+        var minutesLeft = freq - remainder;
+        console.log("Minutes away" + minutesLeft);
+
+        var nextArrival = moment().add(minutesLeft, "minutes");
+        console.log("Arrival :" + moment(nextArrival).format("LT"));
+
+
+        $("#table> tbody")
+            .append($("<tr>")
+                .append($("<td>").text(train))
+                .append($("<td>").text(dest))
+                .append($("<td>").text(freq))
+                .append($("<td>").text(moment(nextArrival, "").format("LT")))
+                .append($("<td>").text(minutesLeft))
+            );
+    })
+    </script>
+</body>
+
+</html>
